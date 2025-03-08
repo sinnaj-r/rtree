@@ -1085,7 +1085,7 @@ class Index:
                 self.handle,
                 n - offn,
                 d,
-                len(ids),
+                len(ids) - offi,  # use the remaining space
                 d_i_stri,
                 d_j_stri,
                 mins[offn:].ctypes.data,
@@ -1100,8 +1100,9 @@ class Index:
                 return ids[: counts.sum()], counts
             # Otherwise, if our array is too small then resize
             else:
-                offi += counts[offn : offn + nr.value].sum()
-                offn += nr.value
+                offi += int(counts[offn : offn + nr.value].sum())
+                offn += int(nr.value)
+
                 # Resize happens in place
                 ids.resize(2 * len(ids), refcheck=False)
 
@@ -1178,7 +1179,7 @@ class Index:
                 num_results if not strict else -num_results,
                 n - offn,
                 d,
-                len(ids),
+                len(ids) - offi,  # use the remaining space
                 d_i_stri,
                 d_j_stri,
                 mins[offn:].ctypes.data,
@@ -1197,10 +1198,10 @@ class Index:
                     return ids[: counts.sum()], counts
             # Otherwise, if our array is too small then resize
             else:
-                offi += counts[offn : offn + nr.value].sum()
-                offn += nr.value
+                offi += int(counts[offn : offn + nr.value].sum())
+                offn += int(nr.value)
 
-                ids = ids.resize(2 * len(ids), refcheck=False)
+                ids.resize(2 * len(ids), refcheck=False)
 
     def _nearestTP(self, coordinates, velocities, times, num_results=1, objects=False):
         p_mins, p_maxs = self.get_coordinate_pointers(coordinates)
