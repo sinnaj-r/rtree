@@ -1102,8 +1102,8 @@ class Index:
             else:
                 offi += counts[offn : offn + nr.value].sum()
                 offn += nr.value
-
-                ids = ids.resize(2 * len(ids), refcheck=False)
+                # Resize happens in place
+                ids.resize(2 * len(ids), refcheck=False)
 
     def nearest_v(
         self,
