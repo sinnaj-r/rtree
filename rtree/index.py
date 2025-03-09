@@ -1064,28 +1064,31 @@ class Index:
         assert mins.shape == maxs.shape
         assert mins.strides == maxs.strides
 
-        # Cast
-        mins = mins.astype(np.float64)
-        maxs = maxs.astype(np.float64)
+        # Ensure the arrays are contiguous in memory
+        mins = np.ascontiguousarray(mins.astype(np.float64))
+        maxs = np.ascontiguousarray(maxs.astype(np.float64))
 
-        # Extract counts
+        # Extract count & dimension
         n, d = mins.shape
 
-        # Compute strides
+        # Compute strides in terms of number of elements
         d_i_stri = mins.strides[0] // mins.itemsize
         d_j_stri = mins.strides[1] // mins.itemsize
 
+        # Allocate result buffers
         ids = np.empty(2 * n, dtype=np.int64)
         counts = np.empty(n, dtype=np.uint64)
-        nr = ctypes.c_int64(0)
         offn, offi = 0, 0
 
         while True:
+            # Reinitialize the result counter on each loop iteration
+            nr = ctypes.c_int64(0)
+
             core.rt.Index_Intersects_id_v(
                 self.handle,
                 n - offn,
                 d,
-                len(ids) - offi,  # use the remaining space
+                len(ids) - offi,  # Pass the remaining capacity
                 d_i_stri,
                 d_j_stri,
                 mins[offn:].ctypes.data,
@@ -1095,15 +1098,16 @@ class Index:
                 ctypes.byref(nr),
             )
 
-            # If we got the expected nuber of results then return
+            # If we got the expected number of results then return
             if nr.value == n - offn:
                 return ids[: counts.sum()], counts
             # Otherwise, if our array is too small then resize
             else:
+                # Update offsets based on how many results were filled
                 offi += int(counts[offn : offn + nr.value].sum())
                 offn += int(nr.value)
 
-                # Resize happens in place
+                # Resize the ids buffer in place to accommodate more results
                 ids.resize(2 * len(ids), refcheck=False)
 
     def nearest_v(
